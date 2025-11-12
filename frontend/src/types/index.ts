@@ -8,6 +8,8 @@ export interface Message {
   role: 'user' | 'assistant'
   content: string
   created_at: string
+  timestamp: string
+  conversation_id: string
   audio_url?: string
   latency_ms?: number
 }
@@ -19,6 +21,7 @@ export interface Conversation {
   started_at: string
   ended_at?: string
   message_count: number
+  messages?: Message[]
   metadata?: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -51,6 +54,7 @@ export interface ChatRequest {
 export interface ChatResponse {
   conversation_id: string
   message: string
+  response: string
   audio_url?: string | null
   latency_ms: number
 }
