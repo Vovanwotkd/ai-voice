@@ -91,7 +91,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "3000:80"
     restart: unless-stopped
     networks:
       - hostess-network
