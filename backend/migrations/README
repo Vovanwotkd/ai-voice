@@ -1,0 +1,46 @@
+Generic single-database configuration with an async dbapi.
+
+# Database Migrations with Alembic
+
+This directory contains database migrations for the AI Voice Hostess Bot.
+
+## Common Commands
+
+```bash
+# Create a new migration (autogenerate from models)
+alembic revision --autogenerate -m "description of changes"
+
+# Apply all pending migrations
+alembic upgrade head
+
+# Rollback one migration
+alembic downgrade -1
+
+# Show current migration version
+alembic current
+
+# Show migration history
+alembic history
+
+# Rollback to specific revision
+alembic downgrade <revision_id>
+```
+
+## Using with Docker
+
+```bash
+# Apply migrations in Docker container
+docker-compose exec backend alembic upgrade head
+
+# Create new migration in Docker container
+docker-compose exec backend alembic revision --autogenerate -m "add new table"
+```
+
+## Migration Files
+
+Migration files are located in `migrations/versions/` and are named:
+`YYYY_MM_DD_HHMM-<revision_id>_<slug>.py`
+
+Each migration file contains:
+- `upgrade()` function: applies the migration
+- `downgrade()` function: reverts the migration
