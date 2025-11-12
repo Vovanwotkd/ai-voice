@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Editor from '@monaco-editor/react'
 import { promptsApi } from '@/api/prompts'
-import type { Prompt } from '@/types'
 
 export default function PromptsPage() {
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)

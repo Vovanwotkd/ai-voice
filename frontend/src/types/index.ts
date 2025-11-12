@@ -7,7 +7,7 @@ export interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  created_at: string
+  created_at?: string
   timestamp: string
   conversation_id: string
   audio_url?: string
