@@ -72,17 +72,12 @@ os.makedirs("data/uploads", exist_ok=True)
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Include routers (will be added as we create them)
-from app.api import health
+# Include routers
+from app.api import health, chat, prompts
+
 app.include_router(health.router, prefix="/api", tags=["Health"])
-
-# Chat API (will be added in next steps)
-# from app.api import chat
-# app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
-
-# Prompts API (will be added in next steps)
-# from app.api import prompts
-# app.include_router(prompts.router, prefix="/api/prompts", tags=["Prompts"])
+app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(prompts.router, prefix="/api/prompts", tags=["Prompts"])
 
 
 @app.get("/")
