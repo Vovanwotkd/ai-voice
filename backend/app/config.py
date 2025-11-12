@@ -3,15 +3,7 @@ Application configuration using pydantic-settings
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List, Optional, Annotated
-from pydantic import BeforeValidator
-
-
-def parse_cors_origins(v):
-    """Parse CORS_ORIGINS from string or list"""
-    if isinstance(v, str):
-        return [origin.strip() for origin in v.split(',')]
-    return v
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -20,10 +12,12 @@ class Settings(BaseSettings):
     # Application
     DEBUG: bool = False
     SECRET_KEY: str
-    CORS_ORIGINS: Annotated[List[str], BeforeValidator(parse_cors_origins)] = [
-        "http://localhost:3000",
-        "http://localhost:5173"
-    ]
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Parse CORS_ORIGINS string into a list"""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(',')]
 
     # Database
     DATABASE_URL: str
