@@ -1,0 +1,184 @@
+========================================
+🚀 КОМАНДЫ ДЛЯ НАСТРОЙКИ СЕРВЕРА
+========================================
+
+Скопируйте эти команды и выполните по порядку:
+
+----------------------------------------
+ШАГ 1: Подключитесь к серверу
+----------------------------------------
+
+ssh root@217.26.27.210
+
+Пароль: rvy&YekUkBs6
+
+
+----------------------------------------
+ШАГ 2: Запустите этот скрипт
+----------------------------------------
+
+Скопируйте ВСЁ от "cat" до последней "EOF" и вставьте в терминал:
+
+cat > setup.sh << 'SETUP_EOF'
+#!/bin/bash
+set -e
+
+echo "=========================================="
+echo "🚀 AI Voice Bot - Server Setup"
+echo "=========================================="
+
+# Update
+echo "📦 [1/8] Updating system..."
+apt update && apt upgrade -y
+
+# Docker
+echo "🐳 [2/8] Installing Docker..."
+curl -fsSL https://get.docker.com | sh
+
+# Docker Compose
+echo "📦 [3/8] Installing Docker Compose..."
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
+# Nginx
+echo "🌐 [4/8] Installing Nginx..."
+apt install -y nginx git ufw certbot python3-certbot-nginx
+
+# Configure Nginx
+echo "⚙️  [5/8] Configuring Nginx..."
+cat > /etc/nginx/sites-available/voice.matrixcontrol.ru << 'NGINX_CONFIG'
+server {
+    listen 80;
+    server_name voice.matrixcontrol.ru;
+    location /.well-known/acme-challenge/ { root /var/www/html; }
+    location / { return 301 https://$server_name$request_uri; }
+}
+server {
+    listen 443 ssl http2;
+    server_name voice.matrixcontrol.ru;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+    location /api/ {
+        proxy_pass http://localhost:8000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+NGINX_CONFIG
+
+ln -sf /etc/nginx/sites-available/voice.matrixcontrol.ru /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl restart nginx
+
+# SSL
+echo "🔐 [6/8] Setting up SSL..."
+certbot --nginx -d voice.matrixcontrol.ru --non-interactive --agree-tos --email admin@matrixcontrol.ru --redirect
+
+# Firewall
+echo "🔒 [7/8] Configuring firewall..."
+ufw --force reset
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw --force enable
+
+# Project
+echo "📂 [8/8] Setting up project..."
+cd /root
+git clone https://github.com/Vovanwotkd/ai-voice.git || (cd ai-voice && git pull)
+cd ai-voice
+
+# Create .env
+DB_PASSWORD=$(openssl rand -hex 16)
+SECRET_KEY=$(openssl rand -hex 32)
+cat > .env << 'ENV_CONFIG'
+DB_USER=postgres
+DB_PASSWORD=${DB_PASSWORD}
+DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/hostess_db
+REDIS_URL=redis://redis:6379/0
+LLM_PROVIDER=claude
+ANTHROPIC_API_KEY=sk-ant-api03-REPLACE-WITH-YOUR-REAL-KEY
+RESTAURANT_NAME=Гастрономия
+RESTAURANT_PHONE=+7-495-123-45-67
+RESTAURANT_ADDRESS=Москва, ул. Примерная, д. 1
+SECRET_KEY=${SECRET_KEY}
+DEBUG=false
+CORS_ORIGINS=https://voice.matrixcontrol.ru
+VITE_API_URL=https://voice.matrixcontrol.ru
+ENV_CONFIG
+chmod 600 .env
+
+echo ""
+echo "=========================================="
+echo "✅ Setup complete!"
+echo "=========================================="
+echo ""
+echo "Next steps:"
+echo "1. Add your API key: nano /root/ai-voice/.env"
+echo "2. Start app: cd /root/ai-voice && docker-compose up -d --build"
+echo ""
+echo "Your site: https://voice.matrixcontrol.ru"
+SETUP_EOF
+
+chmod +x setup.sh
+./setup.sh
+
+
+----------------------------------------
+ШАГ 3: После установки добавьте API ключ
+----------------------------------------
+
+nano /root/ai-voice/.env
+
+Найдите строку:
+ANTHROPIC_API_KEY=sk-ant-api03-REPLACE-WITH-YOUR-REAL-KEY
+
+Замените на ваш реальный ключ.
+
+Сохраните: Ctrl+X, Y, Enter
+
+
+----------------------------------------
+ШАГ 4: Запустите приложение
+----------------------------------------
+
+cd /root/ai-voice
+docker-compose up -d --build
+
+
+----------------------------------------
+ШАГ 5: Проверьте результат
+----------------------------------------
+
+Откройте в браузере:
+https://voice.matrixcontrol.ru
+
+========================================
+🎉 ГОТОВО!
+========================================
+
+Полезные команды:
+
+# Посмотреть логи
+docker-compose logs -f
+
+# Перезапустить
+docker-compose restart
+
+# Статус
+docker-compose ps
+
+# Здоровье API
+curl http://localhost:8000/api/health
