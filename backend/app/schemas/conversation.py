@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class ConversationBase(BaseModel):
     """Base schema for Conversation"""
     session_id: Optional[str] = Field(None, max_length=100, description="Client session ID")
-    metadata: Optional[Dict] = Field(default_factory=dict, description="Additional metadata")
+    meta_data: Optional[Dict] = Field(default_factory=dict, description="Additional metadata")
 
 
 class ConversationCreate(ConversationBase):
@@ -25,7 +25,7 @@ class ConversationCreate(ConversationBase):
 class ConversationUpdate(BaseModel):
     """Schema for updating an existing Conversation"""
     ended_at: Optional[datetime] = Field(None, description="Conversation end time")
-    metadata: Optional[Dict] = Field(None, description="Updated metadata")
+    meta_data: Optional[Dict] = Field(None, description="Updated metadata")
 
 
 class ConversationResponse(ConversationBase):

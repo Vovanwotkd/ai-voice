@@ -45,7 +45,7 @@ class Conversation(BaseModel):
         comment="Total number of messages in this conversation"
     )
 
-    metadata = Column(
+    meta_data = Column(
         JSONB,
         nullable=True,
         default=dict,
