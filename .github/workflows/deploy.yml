@@ -22,46 +22,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            set -e
+            cd /root/ai-voice || {
+              echo "First deployment - cloning repository..."
+              git clone https://github.com/Vovanwotkd/ai-voice.git /root/ai-voice
+              cd /root/ai-voice
+            }
 
-            echo "📦 Deploying AI Voice Hostess Bot..."
-
-            # Navigate to project directory
-            cd /opt/hostess-bot || { echo "❌ Project directory not found"; exit 1; }
-
-            # Pull latest changes
-            echo "🔄 Pulling latest changes from git..."
-            git pull origin main
-
-            # Pull latest Docker images (if using Docker Hub)
-            echo "🐳 Pulling Docker images..."
-            docker-compose pull || true
-
-            # Stop services
-            echo "🛑 Stopping services..."
-            docker-compose down
-
-            # Build and start services
-            echo "🚀 Starting services..."
-            docker-compose up -d --build
-
-            # Wait for services to be healthy
-            echo "⏳ Waiting for services to be ready..."
-            sleep 10
-
-            # Run database migrations
-            echo "📊 Running database migrations..."
-            docker-compose exec -T backend alembic upgrade head || echo "⚠️  Migrations skipped"
-
-            # Check service health
-            echo "🏥 Checking service health..."
-            curl -f http://localhost:8000/api/health || { echo "❌ Backend health check failed"; exit 1; }
-
-            # Clean up old images and volumes
-            echo "🧹 Cleaning up..."
-            docker system prune -f
-
-            echo "✅ Deployment successful!"
+            # Make deploy script executable and run it
+            chmod +x deploy.sh
+            ./deploy.sh
 
       - name: Check deployment health
         run: |
