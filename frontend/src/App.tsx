@@ -1,5 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout/Layout'
+import LoginPage from './pages/LoginPage'
 import ChatPage from './pages/ChatPage'
 import PromptsPage from './pages/PromptsPage'
 import HistoryPage from './pages/HistoryPage'
@@ -7,15 +10,25 @@ import DashboardPage from './pages/DashboardPage'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/chat" replace />} />
-        <Route path="chat" element={<ChatPage />} />
-        <Route path="prompts" element={<PromptsPage />} />
-        <Route path="history" element={<HistoryPage />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-      </Route>
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/chat" replace />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="prompts" element={<PromptsPage />} />
+          <Route path="history" element={<HistoryPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   )
 }
 
