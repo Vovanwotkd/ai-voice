@@ -1,0 +1,108 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: hostess-postgres-dev
+    environment:
+      POSTGRES_DB: hostess_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hostess-dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: hostess-redis-dev
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hostess-dev-network
+
+  # Backend API (FastAPI) with Hot Reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: hostess-backend-dev
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hostess_db
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      YANDEX_API_KEY: ${YANDEX_API_KEY}
+      YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID}
+      LLM_PROVIDER: ${LLM_PROVIDER:-claude}
+      SECRET_KEY: dev-secret-key-change-in-production
+      DEBUG: true
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+      RESTAURANT_NAME: ${RESTAURANT_NAME:-Гастрономия}
+      RESTAURANT_PHONE: ${RESTAURANT_PHONE:-+7-XXX-XXX-XX-XX}
+      RESTAURANT_ADDRESS: ${RESTAURANT_ADDRESS:-Москва, ул. Примерная, 1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app  # Mount source code for hot reload
+      - /app/__pycache__  # Exclude pycache
+    ports:
+      - "8000:8000"
+    networks:
+      - hostess-dev-network
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 3 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head || echo 'No migrations to run' &&
+        echo 'Starting development server with hot reload...' &&
+        uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+      "
+
+  # Frontend (React + Vite) with Hot Reload
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: hostess-frontend-dev
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app  # Mount source code for hot reload
+      - /app/node_modules  # Exclude node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - hostess-dev-network
+    stdin_open: true
+    tty: true
+
+# Volumes
+volumes:
+  postgres_dev_data:
+    driver: local
+
+# Networks
+networks:
+  hostess-dev-network:
+    driver: bridge

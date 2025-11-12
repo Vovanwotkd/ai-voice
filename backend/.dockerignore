@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Data
+data/chroma_db/
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Static
+static/audio/*.mp3
+static/audio/*.wav
+!static/audio/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Misc
+.DS_Store
+Thumbs.db

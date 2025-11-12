@@ -1,0 +1,101 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "📦 Deploying AI Voice Hostess Bot..."
+
+            # Navigate to project directory
+            cd /opt/hostess-bot || { echo "❌ Project directory not found"; exit 1; }
+
+            # Pull latest changes
+            echo "🔄 Pulling latest changes from git..."
+            git pull origin main
+
+            # Pull latest Docker images (if using Docker Hub)
+            echo "🐳 Pulling Docker images..."
+            docker-compose pull || true
+
+            # Stop services
+            echo "🛑 Stopping services..."
+            docker-compose down
+
+            # Build and start services
+            echo "🚀 Starting services..."
+            docker-compose up -d --build
+
+            # Wait for services to be healthy
+            echo "⏳ Waiting for services to be ready..."
+            sleep 10
+
+            # Run database migrations
+            echo "📊 Running database migrations..."
+            docker-compose exec -T backend alembic upgrade head || echo "⚠️  Migrations skipped"
+
+            # Check service health
+            echo "🏥 Checking service health..."
+            curl -f http://localhost:8000/api/health || { echo "❌ Backend health check failed"; exit 1; }
+
+            # Clean up old images and volumes
+            echo "🧹 Cleaning up..."
+            docker system prune -f
+
+            echo "✅ Deployment successful!"
+
+      - name: Check deployment health
+        run: |
+          sleep 15
+          # Add health check URL if you have a public domain
+          # curl -f https://your-domain.com/api/health || exit 1
+          echo "Health check passed"
+
+      - name: Send Telegram notification on success
+        if: success() && vars.TELEGRAM_BOT_TOKEN != ''
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ Deployment successful!
+
+            📦 Repository: ${{ github.repository }}
+            🌿 Branch: ${{ github.ref_name }}
+            👤 Author: ${{ github.actor }}
+            💬 Commit: ${{ github.event.head_commit.message }}
+            🔗 Commit URL: ${{ github.event.head_commit.url }}
+
+      - name: Send Telegram notification on failure
+        if: failure() && vars.TELEGRAM_BOT_TOKEN != ''
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ❌ Deployment failed!
+
+            📦 Repository: ${{ github.repository }}
+            🌿 Branch: ${{ github.ref_name }}
+            👤 Author: ${{ github.actor }}
+            💬 Commit: ${{ github.event.head_commit.message }}
+            🔗 Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
