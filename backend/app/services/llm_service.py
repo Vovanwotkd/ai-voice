@@ -219,7 +219,8 @@ class LLMService:
 
         headers = {
             "Authorization": f"Api-Key {settings.YANDEX_API_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "x-folder-id": settings.YANDEX_FOLDER_ID
         }
 
         # Convert messages format for Yandex
@@ -233,7 +234,7 @@ class LLMService:
             })
 
         data = {
-            "modelUri": f"gpt://{settings.YANDEX_FOLDER_ID}/yandexgpt-lite",
+            "modelUri": f"gpt://{settings.YANDEX_FOLDER_ID}/yandexgpt-lite/latest",
             "completionOptions": {
                 "stream": False,
                 "temperature": temperature,
@@ -253,6 +254,8 @@ class LLMService:
 
         except httpx.HTTPError as e:
             logger.error(f"Yandex GPT API error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response body: {e.response.text}")
             raise
 
 
