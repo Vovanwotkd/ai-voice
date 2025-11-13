@@ -38,7 +38,7 @@ export default function ChatPage() {
         id: crypto.randomUUID(),
         conversation_id: response.conversation_id,
         role: 'assistant',
-        content: response.response,
+        content: response.message,
         timestamp: new Date().toISOString(),
         latency_ms: response.latency_ms,
       }
