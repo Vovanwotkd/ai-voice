@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { chatApi } from '@/api/chat'
 import type { Message } from '@/types'
+import VoiceRecorder from '@/components/VoiceRecorder'
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const [mode, setMode] = useState<'text' | 'voice'>('text')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
@@ -65,6 +67,30 @@ export default function ChatPage() {
     setInput('')
   }
 
+  const handleVoiceMessage = (userText: string, botText: string, audioUrl: string, convId: string) => {
+    // Add user message
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      conversation_id: convId,
+      role: 'user',
+      content: userText,
+      timestamp: new Date().toISOString(),
+    }
+
+    // Add assistant message
+    const assistantMessage: Message = {
+      id: crypto.randomUUID(),
+      conversation_id: convId,
+      role: 'assistant',
+      content: botText,
+      timestamp: new Date().toISOString(),
+      audio_url: audioUrl,
+    }
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage])
+    setConversationId(convId)
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
@@ -77,12 +103,37 @@ export default function ChatPage() {
               : 'Начните новый разговор'}
           </p>
         </div>
-        <button
-          onClick={handleNewConversation}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
-        >
-          🔄 Новый разговор
-        </button>
+        <div className="flex gap-2">
+          {/* Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setMode('text')}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                mode === 'text'
+                  ? 'bg-white shadow-sm text-blue-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              💬 Текст
+            </button>
+            <button
+              onClick={() => setMode('voice')}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                mode === 'voice'
+                  ? 'bg-white shadow-sm text-blue-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              🎤 Голос
+            </button>
+          </div>
+          <button
+            onClick={handleNewConversation}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+          >
+            🔄 Новый разговор
+          </button>
+        </div>
       </div>
 
       {/* Messages Container */}
@@ -109,25 +160,36 @@ export default function ChatPage() {
 
       {/* Input Form */}
       <div className="bg-white border-t px-6 py-4">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Введите сообщение..."
-              disabled={sendMessageMutation.isPending}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || sendMessageMutation.isPending}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {sendMessageMutation.isPending ? '⏳' : '📤'} Отправить
-            </button>
-          </div>
-        </form>
+        <div className="max-w-4xl mx-auto">
+          {mode === 'text' ? (
+            <form onSubmit={handleSubmit}>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Введите сообщение..."
+                  disabled={sendMessageMutation.isPending}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || sendMessageMutation.isPending}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {sendMessageMutation.isPending ? '⏳' : '📤'} Отправить
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex justify-center">
+              <VoiceRecorder
+                conversationId={conversationId}
+                onMessage={handleVoiceMessage}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
