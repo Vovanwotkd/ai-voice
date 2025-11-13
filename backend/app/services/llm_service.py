@@ -234,7 +234,7 @@ class LLMService:
             })
 
         data = {
-            "modelUri": f"gpt://{settings.YANDEX_FOLDER_ID}/yandexgpt-lite/latest",
+            "modelUri": f"gpt://{settings.YANDEX_FOLDER_ID}/yandexgpt/latest",
             "completionOptions": {
                 "stream": False,
                 "temperature": temperature,
