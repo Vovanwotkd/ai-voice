@@ -72,6 +72,7 @@ structlog==24.1.0
 # ==========================================
 # RAG Dependencies
 # ==========================================
+numpy<2.0  # ChromaDB incompatible with NumPy 2.0
 chromadb==0.4.22
 PyPDF2==3.0.1
 python-docx==1.1.0
