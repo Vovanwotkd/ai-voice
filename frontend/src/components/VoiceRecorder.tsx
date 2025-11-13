@@ -198,8 +198,10 @@ export default function VoiceRecorder({ conversationId, onMessage }: VoiceRecord
     }
   }
 
-  // Cleanup on unmount
+  // Auto-connect WebSocket on mount
   useEffect(() => {
+    connectWebSocket()
+
     return () => {
       if (wsRef.current) {
         wsRef.current.close()
@@ -211,41 +213,51 @@ export default function VoiceRecorder({ conversationId, onMessage }: VoiceRecord
   }, [])
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-4">
       {/* Recording Button */}
-      <button
-        onClick={toggleRecording}
-        disabled={!isConnected && !isRecording}
-        className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all ${
-          isRecording
-            ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-            : 'bg-blue-600 hover:bg-blue-700'
-        } text-white disabled:bg-gray-300 disabled:cursor-not-allowed`}
-        title={isRecording ? 'Остановить запись' : 'Начать запись'}
-      >
-        {isRecording ? '⏹️' : '🎤'}
-      </button>
-
-      {/* Connection Status */}
-      {!isConnected && !isRecording && (
+      <div className="flex flex-col items-center gap-3">
         <button
-          onClick={connectWebSocket}
-          className="text-xs text-gray-500 hover:text-blue-600 underline"
+          onClick={toggleRecording}
+          disabled={!isConnected && !isRecording}
+          className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl transition-all shadow-lg ${
+            isRecording
+              ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+              : 'bg-blue-600 hover:bg-blue-700'
+          } text-white disabled:bg-gray-300 disabled:cursor-not-allowed`}
+          title={isRecording ? 'Нажмите чтобы остановить' : 'Нажмите чтобы начать говорить'}
         >
-          Подключиться
+          {isRecording ? '⏹️' : '🎤'}
         </button>
-      )}
 
-      {/* Status Indicator */}
+        {/* Connection and Recording Status */}
+        <div className="text-center">
+          {!isConnected ? (
+            <div className="text-sm text-gray-500">
+              ⏳ Подключение...
+            </div>
+          ) : isRecording ? (
+            <div className="text-base font-semibold text-red-600 animate-pulse">
+              🔴 Запись... Нажмите чтобы остановить
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              Нажмите на микрофон чтобы начать разговор
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Processing Status */}
       {status && (
-        <div className="text-sm text-gray-600 animate-pulse">
+        <div className="text-base font-medium text-blue-600 animate-pulse">
           {status}
         </div>
       )}
 
       {/* Transcription */}
       {transcription && (
-        <div className="text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded-lg max-w-xs">
+        <div className="text-sm text-gray-800 bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg max-w-md">
+          <div className="font-medium text-blue-700 mb-1">Вы сказали:</div>
           {transcription}
         </div>
       )}
