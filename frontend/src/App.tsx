@@ -7,6 +7,7 @@ import ChatPage from './pages/ChatPage'
 import PromptsPage from './pages/PromptsPage'
 import HistoryPage from './pages/HistoryPage'
 import DashboardPage from './pages/DashboardPage'
+import DocumentsPage from './pages/DocumentsPage'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="prompts" element={<PromptsPage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

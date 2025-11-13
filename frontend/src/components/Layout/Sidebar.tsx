@@ -5,6 +5,7 @@ const navigation = [
   { name: 'Промпты', href: '/prompts', icon: '📝' },
   { name: 'История', href: '/history', icon: '📚' },
   { name: 'Дашборд', href: '/dashboard', icon: '📊' },
+  { name: 'База знаний', href: '/documents', icon: '📚' },
 ]
 
 export default function Sidebar() {
@@ -41,7 +42,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-800 text-sm text-gray-400">
-        v1.0.0 | Фаза 2 MVP
+        v1.0.0 | Фаза 4 RAG
       </div>
     </div>
   )
