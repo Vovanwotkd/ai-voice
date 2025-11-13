@@ -194,7 +194,7 @@ async def handle_audio_message(
             text=response_text,
             voice="alena",  # Female voice
             emotion="neutral",
-            format=audio_format
+            format="oggopus"  # Use oggopus for browser playback
         )
 
         if not audio_response:
