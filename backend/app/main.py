@@ -73,11 +73,12 @@ os.makedirs("data/uploads", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include routers
-from app.api import health, chat, prompts
+from app.api import health, chat, prompts, voice
 
 app.include_router(health.router, prefix="/api", tags=["Health"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(prompts.router, prefix="/api/prompts", tags=["Prompts"])
+app.include_router(voice.router, prefix="/api/ws", tags=["Voice"])
 
 
 @app.get("/")
