@@ -157,7 +157,7 @@ export default function VoiceRecorder({ conversationId, onMessage }: VoiceRecord
             wsRef.current.send(JSON.stringify({
               type: 'audio',
               data: base64Audio,
-              format: 'oggopus',
+              format: 'webm',
               conversation_id: conversationId
             }))
           }
