@@ -5,6 +5,10 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Accept build args
+ARG VITE_WS_URL
+ENV VITE_WS_URL=${VITE_WS_URL}
+
 # Copy package files
 COPY package.json package-lock.json* ./
 
@@ -14,7 +18,7 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build application
+# Build application with environment variable
 RUN npm run build
 
 # Stage 2: Production
