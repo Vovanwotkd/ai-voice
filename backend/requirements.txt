@@ -70,13 +70,12 @@ httpx==0.26.0
 structlog==24.1.0
 
 # ==========================================
-# RAG Dependencies (будут добавлены в фазе 4)
+# RAG Dependencies
 # ==========================================
-# chromadb==0.4.22
-# sentence-transformers==2.3.1
-# PyPDF2==3.0.1
-# python-docx==1.1.0
-# unstructured==0.12.0
+chromadb==0.4.22
+PyPDF2==3.0.1
+python-docx==1.1.0
+tiktoken==0.5.2
 
 # ==========================================
 # Vocode (будет добавлено в фазе 5)

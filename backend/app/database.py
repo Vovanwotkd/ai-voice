@@ -53,7 +53,7 @@ def init_db() -> None:
     This is called on application startup.
     """
     # Import all models here to ensure they are registered with Base
-    from app.models import prompt, conversation, message  # noqa: F401
+    from app.models import prompt, conversation, message, document, document_chunk  # noqa: F401
 
     # Create all tables
     Base.metadata.create_all(bind=engine)

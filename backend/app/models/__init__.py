@@ -5,5 +5,15 @@ SQLAlchemy database models
 from app.models.prompt import Prompt
 from app.models.conversation import Conversation
 from app.models.message import Message
+from app.models.document import Document, DocumentType, DocumentStatus
+from app.models.document_chunk import DocumentChunk
 
-__all__ = ["Prompt", "Conversation", "Message"]
+__all__ = [
+    "Prompt",
+    "Conversation",
+    "Message",
+    "Document",
+    "DocumentType",
+    "DocumentStatus",
+    "DocumentChunk",
+]

@@ -13,6 +13,7 @@ from app.schemas.conversation import ConversationResponse, ConversationWithMessa
 from app.services.llm_service import llm_service
 from app.services.prompt_service import prompt_service
 from app.services.conversation_manager import conversation_manager
+from app.services.rag_service import rag_service
 from app.core.constants import MESSAGE_ROLE_USER, MESSAGE_ROLE_ASSISTANT
 
 router = APIRouter()
@@ -66,16 +67,21 @@ async def send_message(
 
         system_prompt = prompt_service.render_prompt(prompt_content)
 
-        # Generate LLM response
-        llm_response = await llm_service.generate_response(
-            message=request.message,
+        # Generate response with RAG (if enabled)
+        use_rag = getattr(request, 'use_rag', True)  # RAG enabled by default
+        rag_response = await rag_service.answer_with_context(
+            query=request.message,
             conversation_history=history,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            use_rag=use_rag
         )
 
-        # Debug: log the LLM response
-        logger.info(f"LLM response content: '{llm_response['content']}'")
-        logger.info(f"LLM response keys: {llm_response.keys()}")
+        # Extract response content and metadata
+        response_content = rag_response["content"]
+        latency_ms = rag_response.get("usage", {}).get("latency_ms", 0)
+
+        # Debug: log the response
+        logger.info(f"RAG response: '{response_content}' (RAG used: {rag_response['rag_used']}, chunks: {rag_response['context_chunks']})")
 
         # Save user message
         await conversation_manager.add_message(
@@ -90,8 +96,8 @@ async def send_message(
             db=db,
             conversation_id=conversation.id,
             role=MESSAGE_ROLE_ASSISTANT,
-            content=llm_response["content"],
-            latency_ms=llm_response["latency_ms"]
+            content=response_content,
+            latency_ms=latency_ms
         )
 
         # TODO: Generate TTS audio if requested (Phase 3)
@@ -101,9 +107,9 @@ async def send_message(
 
         return ChatResponse(
             conversation_id=str(conversation.id),
-            message=llm_response["content"],
+            message=response_content,
             audio_url=audio_url,
-            latency_ms=llm_response["latency_ms"]
+            latency_ms=latency_ms
         )
 
     except Exception as e:
