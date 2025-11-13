@@ -42,12 +42,12 @@ export default function VoiceRecorder({ conversationId, onMessage }: VoiceRecord
       console.log('WebSocket message:', message)
 
       if (message.type === 'status') {
-        const statusText = {
+        const statusText: Record<string, string> = {
           listening: '🎤 Слушаю...',
           processing: '🤔 Думаю...',
           speaking: '🔊 Отвечаю...'
-        }[message.status || '']
-        setStatus(statusText || '')
+        }
+        setStatus(message.status ? statusText[message.status] || '' : '')
       } else if (message.type === 'transcription') {
         setTranscription(message.text || '')
       } else if (message.type === 'response') {
