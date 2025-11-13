@@ -249,8 +249,13 @@ class LLMService:
                 response.raise_for_status()
                 result = response.json()
 
+                # Debug: log the full response
+                logger.debug(f"Yandex GPT response: {result}")
+
                 # Extract text from Yandex response format
-                return result["result"]["alternatives"][0]["message"]["text"]
+                response_text = result["result"]["alternatives"][0]["message"]["text"]
+                logger.debug(f"Extracted text: {response_text}")
+                return response_text
 
         except httpx.HTTPError as e:
             logger.error(f"Yandex GPT API error: {e}")

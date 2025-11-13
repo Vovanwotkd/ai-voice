@@ -73,6 +73,10 @@ async def send_message(
             system_prompt=system_prompt
         )
 
+        # Debug: log the LLM response
+        logger.info(f"LLM response content: '{llm_response['content']}'")
+        logger.info(f"LLM response keys: {llm_response.keys()}")
+
         # Save user message
         await conversation_manager.add_message(
             db=db,
