@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 const navigation = [
   { name: 'Чат', href: '/chat', icon: '💬' },
+  { name: 'Голосовой звонок', href: '/voice-call', icon: '📞' },
   { name: 'Промпты', href: '/prompts', icon: '📝' },
   { name: 'История', href: '/history', icon: '📚' },
   { name: 'Дашборд', href: '/dashboard', icon: '📊' },
@@ -42,7 +43,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-800 text-sm text-gray-400">
-        v1.0.0 | Фаза 4 RAG
+        v1.1.0 | Фаза 5 Vocode
       </div>
     </div>
   )

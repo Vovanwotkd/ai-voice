@@ -83,3 +83,6 @@ tiktoken==0.5.2
 # ==========================================
 vocode==0.1.112.1
 aiohttp==3.9.1  # для Yandex Streaming API
+grpcio==1.60.0
+grpcio-tools==1.60.0
+yandex-speechkit==2.2.2
