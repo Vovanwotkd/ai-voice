@@ -81,8 +81,9 @@ tiktoken==0.5.2
 # ==========================================
 # Vocode - Voice AI Agent Framework
 # ==========================================
-vocode==0.1.112.1
+vocode==0.1.113
 aiohttp==3.9.1  # для Yandex Streaming API
 grpcio==1.60.0
 grpcio-tools==1.60.0
 yandex-speechkit==2.2.2
+webrtcvad==2.0.10  # Voice Activity Detection

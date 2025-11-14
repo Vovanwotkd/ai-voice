@@ -1,26 +1,30 @@
-# Vocode Implementation - Phase 5
+# Vocode Implementation - Phase 5 (Final)
+
+## ✅ Реализовано качественно
+
+Использован **единый подход с Vocode** для админки и продакшена
 
 ## Что реализовано
 
-### Backend Components
+### Backend Components (Vocode-совместимые)
 
-1. **YandexTranscriber** ([backend/app/services/yandex_transcriber.py](backend/app/services/yandex_transcriber.py))
-   - Streaming речевое распознавание через Yandex SpeechKit v3
-   - Поддержка partial и final транскрипций
-   - Аутентификация через API key (без IAM token)
-   - Интеграция с Vocode framework
+1. **YandexTranscriber** ([backend/app/vocode_providers/yandex_transcriber.py](backend/app/vocode_providers/yandex_transcriber.py))
+   - Extends `BaseAsyncTranscriber` от Vocode
+   - Использует Yandex SpeechKit REST API для STT
+   - Правильная структура конфигурации (sampling_rate, audio_encoding, chunk_size)
+   - Работает и в админке, и в продакшене
 
-2. **YandexSynthesizer** ([backend/app/services/yandex_synthesizer.py](backend/app/services/yandex_synthesizer.py))
-   - Streaming синтез речи через Yandex SpeechKit v3
-   - Поддержка множества голосов (Alena, Jane, Filipp и др.)
-   - Настройки скорости, тона, громкости
-   - PCM 16kHz аудио для WebRTC
+2. **YandexSynthesizer** ([backend/app/vocode_providers/yandex_synthesizer.py](backend/app/vocode_providers/yandex_synthesizer.py))
+   - Extends `BaseSynthesizer` от Vocode
+   - Использует Yandex TTS REST API
+   - Голоса: alena, filipp и др.
+   - Правильная структура с `create_speech_uncached()`
 
-3. **HostessAgent** ([backend/app/services/hostess_agent.py](backend/app/services/hostess_agent.py))
-   - AI-агент с интеграцией RAG
-   - Использует базу знаний для точных ответов
-   - Сохранение истории разговора в БД
-   - Настраиваемые system prompts
+3. **HostessAgent** ([backend/app/vocode_providers/hostess_agent.py](backend/app/vocode_providers/hostess_agent.py))
+   - Extends `BaseAgent` от Vocode
+   - Интеграция с RAG для контекстных ответов
+   - Сохранение истории в PostgreSQL
+   - Использует system prompts из БД
 
 4. **WebRTC Endpoints** ([backend/app/api/vocode_calls.py](backend/app/api/vocode_calls.py))
    - `/api/vocode/start` - Инициализация звонка
