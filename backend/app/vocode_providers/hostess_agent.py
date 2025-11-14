@@ -15,7 +15,8 @@ from app.services.rag_service import rag_service
 from app.services.prompt_service import prompt_service
 from app.database import get_db
 from app.models.conversation import Conversation
-from app.models.message import Message, MessageRole
+from app.models.message import Message
+from app.core.constants import MESSAGE_ROLE_USER, MESSAGE_ROLE_ASSISTANT
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
@@ -146,7 +147,7 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 messages = result.scalars().all()
 
                 self.conversation_history = [
-                    {"role": msg.role.value, "content": msg.content}
+                    {"role": msg.role, "content": msg.content}
                     for msg in messages
                 ]
 
@@ -162,7 +163,7 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 # Save user message
                 user_msg = Message(
                     conversation_id=self.conversation_id,
-                    role=MessageRole.USER,
+                    role=MESSAGE_ROLE_USER,
                     content=user_input
                 )
                 db.add(user_msg)
@@ -170,7 +171,7 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 # Save assistant message
                 assistant_msg = Message(
                     conversation_id=self.conversation_id,
-                    role=MessageRole.ASSISTANT,
+                    role=MESSAGE_ROLE_ASSISTANT,
                     content=assistant_response
                 )
                 db.add(assistant_msg)
