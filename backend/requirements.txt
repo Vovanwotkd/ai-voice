@@ -82,5 +82,5 @@ tiktoken==0.5.2
 # Vocode - Voice AI Agent Framework
 # ==========================================
 vocode==0.1.113
-aiohttp==3.9.1  # для Yandex REST API
+aiohttp==3.9.5  # для Yandex REST API (vocode requires >=3.9.5)
 webrtcvad==2.0.10  # Voice Activity Detection
