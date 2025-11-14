@@ -10,7 +10,7 @@ import aiohttp
 
 from vocode.streaming.synthesizer.base_synthesizer import BaseSynthesizer, SynthesisResult
 from vocode.streaming.models.synthesizer import SynthesizerConfig
-from vocode.streaming.models.audio_encoding import AudioEncoding
+from vocode.streaming.models.audio import AudioEncoding
 
 from app.config import settings
 

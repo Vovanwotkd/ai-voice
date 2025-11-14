@@ -11,7 +11,7 @@ import aiohttp
 
 from vocode.streaming.transcriber.base_transcriber import BaseAsyncTranscriber, Transcription
 from vocode.streaming.models.transcriber import TranscriberConfig
-from vocode.streaming.models.audio_encoding import AudioEncoding
+from vocode.streaming.models.audio import AudioEncoding
 
 from app.config import settings
 
