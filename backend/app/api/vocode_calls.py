@@ -178,3 +178,37 @@ async def end_call(call_id: str):
         del active_calls[call_id]
 
     return JSONResponse({"call_id": call_id, "status": "ended"})
+
+
+@router.get("/config")
+async def get_config():
+    """Get Vocode configuration"""
+    return JSONResponse({
+        "voices": {
+            "alena": "Алена (женский, дружелюбный)",
+            "filipp": "Филипп (мужской, нейтральный)",
+            "ermil": "Ермил (мужской, дружелюбный)",
+            "jane": "Джейн (женский, нейтральный)",
+            "omazh": "Омаж (женский, анимированный)"
+        },
+        "system_prompts": {
+            "default": "Вы - AI-ассистент ресторана. Помогайте гостям с бронированием и вопросами."
+        },
+        "audio_config": {
+            "sample_rate": 16000,
+            "encoding": "LINEAR16",
+            "channels": 1
+        }
+    })
+
+
+@router.get("/active")
+async def get_active_calls():
+    """Get active calls"""
+    return JSONResponse({
+        "active_calls": [
+            {"call_id": call_id, "status": "active"}
+            for call_id in active_calls.keys()
+        ],
+        "count": len(active_calls)
+    })
