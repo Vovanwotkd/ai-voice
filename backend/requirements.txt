@@ -1,86 +1,86 @@
 # ==========================================
 # FastAPI & Web Framework
 # ==========================================
-fastapi==0.111.0  # vocode requires >=0.111.0,<0.112.0
-uvicorn[standard]==0.27.0
-python-multipart>=0.0.7  # fastapi 0.111.0 requires >=0.0.7
+fastapi
+uvicorn[standard]
+python-multipart
 
 # ==========================================
 # Database
 # ==========================================
-sqlalchemy==2.0.25
-asyncpg==0.29.0
-alembic==1.13.1
-psycopg2-binary==2.9.9
+sqlalchemy
+asyncpg
+alembic
+psycopg2-binary
 
 # ==========================================
 # Redis
 # ==========================================
-redis>=5.0.4,<6.0.0  # vocode requires >=5.0.4,<6.0.0
+redis
 
 # ==========================================
 # Data Validation
 # ==========================================
-pydantic>=2.7.2,<3.0.0  # vocode requires >=2.7.2,<3.0.0
-pydantic-settings>=2.1.0
-email-validator>=2.1.0
+pydantic
+pydantic-settings
+email-validator
 
 # ==========================================
 # LLM APIs
 # ==========================================
-anthropic==0.28.0  # vocode requires >=0.28.0,<0.29.0
-openai>=1.30.5,<2.0.0  # vocode requires >=1.30.5,<2.0.0
-httpx==0.26.0
+anthropic
+openai
+httpx
 
 # ==========================================
 # Authentication & Security
 # ==========================================
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-dotenv==1.0.0
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
 
 # ==========================================
 # CORS & WebSocket
 # ==========================================
-python-socketio==5.11.0
-websockets==12.0
+python-socketio
+websockets
 
 # ==========================================
 # Utils
 # ==========================================
-python-dateutil==2.8.2
-pytz==2023.3
+python-dateutil
+pytz
 
 # ==========================================
 # Audio Processing
 # ==========================================
-pydub==0.25.1
+pydub
 
 # ==========================================
 # Testing
 # ==========================================
-pytest==7.4.4
-pytest-asyncio==0.23.3
-pytest-cov==4.1.0
-httpx==0.26.0
+pytest
+pytest-asyncio
+pytest-cov
 
 # ==========================================
 # Logging & Monitoring
 # ==========================================
-structlog==24.1.0
+structlog
 
 # ==========================================
 # RAG Dependencies
 # ==========================================
 numpy<2.0  # ChromaDB incompatible with NumPy 2.0
-chromadb==0.4.22
-PyPDF2==3.0.1
-python-docx==1.1.0
-tiktoken>=0.7.0,<0.8.0  # vocode requires >=0.7.0,<0.8.0
+chromadb
+PyPDF2
+python-docx
+tiktoken
 
 # ==========================================
 # Vocode - Voice AI Agent Framework
+# Must be last to ensure compatibility
 # ==========================================
 vocode==0.1.113
-aiohttp==3.9.5  # для Yandex REST API (vocode requires >=3.9.5)
-webrtcvad==2.0.10  # Voice Activity Detection
+aiohttp
+webrtcvad
