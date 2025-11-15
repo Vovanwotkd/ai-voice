@@ -21,8 +21,9 @@ export default function VoiceCallPage() {
   const wsRef = useRef<WebSocket | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
-  const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioQueueRef = useRef<Float32Array[]>([])
+  const isPlayingRef = useRef<boolean>(false)
 
   // Get Vocode configuration
   const { data: config } = useQuery({
@@ -124,41 +125,73 @@ export default function VoiceCallPage() {
     audioContext: AudioContext,
     ws: WebSocket
   ) => {
-    const source = audioContext.createMediaStreamSource(stream)
+    try {
+      // Use MediaRecorder API (modern, non-deprecated)
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus',
+      })
+      mediaRecorderRef.current = mediaRecorder
 
-    // Create script processor for audio capture
-    const processor = audioContext.createScriptProcessor(4096, 1, 1)
-    processorRef.current = processor
+      // Analyze audio level for visualization
+      const analyser = audioContext.createAnalyser()
+      const source = audioContext.createMediaStreamSource(stream)
+      source.connect(analyser)
+      analyser.fftSize = 256
+      const dataArray = new Uint8Array(analyser.frequencyBinCount)
 
-    processor.onaudioprocess = (e) => {
-      if (ws.readyState !== WebSocket.OPEN) return
+      // Update audio level periodically
+      const updateLevel = () => {
+        if (ws.readyState !== WebSocket.OPEN) return
+        analyser.getByteFrequencyData(dataArray)
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length
+        setAudioLevel(Math.min(average / 128, 1))
+        requestAnimationFrame(updateLevel)
+      }
+      updateLevel()
 
-      const inputData = e.inputBuffer.getChannelData(0)
+      // Handle recorded audio chunks
+      mediaRecorder.ondataavailable = async (event) => {
+        if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+          try {
+            // Convert webm to PCM 16-bit for backend
+            const arrayBuffer = await event.data.arrayBuffer()
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
 
-      // Calculate audio level for visualization
-      const sum = inputData.reduce((acc, val) => acc + Math.abs(val), 0)
-      const level = sum / inputData.length
-      setAudioLevel(Math.min(level * 10, 1)) // Scale for visualization
+            // Convert to mono PCM 16-bit
+            const channelData = audioBuffer.getChannelData(0)
+            const pcmData = new Int16Array(channelData.length)
 
-      // Convert Float32Array to Int16Array (PCM 16-bit)
-      const pcmData = new Int16Array(inputData.length)
-      for (let i = 0; i < inputData.length; i++) {
-        const s = Math.max(-1, Math.min(1, inputData[i]))
-        pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+            for (let i = 0; i < channelData.length; i++) {
+              const s = Math.max(-1, Math.min(1, channelData[i]))
+              pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+            }
+
+            // Send to WebSocket
+            ws.send(pcmData.buffer)
+          } catch (error) {
+            console.error('Error processing audio:', error)
+          }
+        }
       }
 
-      // Send to WebSocket
-      ws.send(pcmData.buffer)
+      // Start recording with 250ms chunks (lower latency)
+      mediaRecorder.start(250)
+    } catch (error) {
+      console.error('Error starting audio capture:', error)
+      setError('Failed to start audio capture')
     }
-
-    source.connect(processor)
-    processor.connect(audioContext.destination)
   }
 
   const playAudioChunk = async (arrayBuffer: ArrayBuffer) => {
     if (!audioContextRef.current) return
 
     try {
+      // Validate audio data
+      if (arrayBuffer.byteLength === 0) {
+        console.warn('Received empty audio chunk')
+        return
+      }
+
       // Convert Int16 PCM to Float32
       const pcmData = new Int16Array(arrayBuffer)
       const floatData = new Float32Array(pcmData.length)
@@ -171,36 +204,47 @@ export default function VoiceCallPage() {
       audioQueueRef.current.push(floatData)
 
       // Play if not already playing
-      if (audioQueueRef.current.length === 1) {
+      if (!isPlayingRef.current) {
         playNextChunk()
       }
     } catch (error) {
-      console.error('Error playing audio:', error)
+      console.error('Error processing audio chunk:', error)
     }
   }
 
   const playNextChunk = async () => {
-    if (!audioContextRef.current || audioQueueRef.current.length === 0) return
+    if (!audioContextRef.current || audioQueueRef.current.length === 0) {
+      isPlayingRef.current = false
+      return
+    }
 
+    isPlayingRef.current = true
     const audioContext = audioContextRef.current
     const chunk = audioQueueRef.current.shift()!
 
-    // Create buffer and play
-    const buffer = audioContext.createBuffer(1, chunk.length, 16000)
-    buffer.getChannelData(0).set(chunk)
+    try {
+      // Create buffer and play
+      const buffer = audioContext.createBuffer(1, chunk.length, 16000)
+      buffer.getChannelData(0).set(chunk)
 
-    const source = audioContext.createBufferSource()
-    source.buffer = buffer
-    source.connect(audioContext.destination)
+      const source = audioContext.createBufferSource()
+      source.buffer = buffer
+      source.connect(audioContext.destination)
 
-    source.onended = () => {
-      // Play next chunk
+      source.onended = () => {
+        // Play next chunk immediately
+        playNextChunk()
+      }
+
+      source.start()
+    } catch (error) {
+      console.error('Error playing audio chunk:', error)
+      isPlayingRef.current = false
+      // Try to recover by playing next chunk
       if (audioQueueRef.current.length > 0) {
         playNextChunk()
       }
     }
-
-    source.start()
   }
 
   const handleWebSocketMessage = (message: any) => {
@@ -230,10 +274,14 @@ export default function VoiceCallPage() {
   }
 
   const disconnectCall = () => {
-    // Stop audio capture
-    if (processorRef.current) {
-      processorRef.current.disconnect()
-      processorRef.current = null
+    // Stop media recorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop()
+      } catch (e) {
+        console.error('Error stopping media recorder:', e)
+      }
+      mediaRecorderRef.current = null
     }
 
     // Stop media stream
@@ -256,6 +304,7 @@ export default function VoiceCallPage() {
 
     // Clear audio queue
     audioQueueRef.current = []
+    isPlayingRef.current = false
 
     setCallState('ended')
     setAudioLevel(0)

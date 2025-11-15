@@ -1,6 +1,6 @@
 """
 Yandex SpeechKit Synthesizer for Vocode
-Uses REST API for text-to-speech
+Uses Streaming API for low-latency text-to-speech
 """
 
 import asyncio
@@ -13,6 +13,7 @@ from vocode.streaming.models.synthesizer import SynthesizerConfig
 from vocode.streaming.models.audio import AudioEncoding
 
 from app.config import settings
+from app.services.yandex_streaming_tts import yandex_streaming_tts_service
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,9 @@ class YandexSynthesizerConfig(SynthesizerConfig):
 
     voice: str = "alena"  # Yandex voice
     language_code: str = "ru-RU"
-    speed: float = 0.8  # Slower speech to compensate for fast playback
+    speed: float = 1.0  # Normal speech speed (fixed playback rate)
     emotion: str = "neutral"  # neutral | good | evil
+    use_streaming: bool = True  # Use streaming API for lower latency
 
     def __init__(self, **data):
         super().__init__(
@@ -62,7 +64,7 @@ class YandexSynthesizer(BaseSynthesizer[YandexSynthesizerConfig]):
         is_sole_text_chunk: bool = False,
     ) -> SynthesisResult:
         """
-        Synthesize speech from text
+        Synthesize speech from text with streaming support
 
         Args:
             message: Text to synthesize
@@ -75,20 +77,38 @@ class YandexSynthesizer(BaseSynthesizer[YandexSynthesizerConfig]):
         """
 
         async def chunk_generator() -> AsyncGenerator[bytes, None]:
-            """Generator that yields audio chunks"""
+            """Generator that yields audio chunks with streaming"""
             try:
-                # Synthesize audio
-                audio_data = await self._synthesize_yandex(message)
-
-                if audio_data:
-                    # Yield in chunks
-                    for i in range(0, len(audio_data), chunk_size):
-                        chunk = audio_data[i:i + chunk_size]
+                if self.synthesizer_config.use_streaming:
+                    # Use streaming TTS for lower latency
+                    total_bytes = 0
+                    async for chunk in yandex_streaming_tts_service.synthesize_streaming(
+                        text=message,
+                        voice=self.synthesizer_config.voice,
+                        language=self.synthesizer_config.language_code,
+                        speed=self.synthesizer_config.speed,
+                        emotion=self.synthesizer_config.emotion,
+                        chunk_size=chunk_size,
+                    ):
                         yield chunk
+                        total_bytes += len(chunk)
 
-                    logger.info(f"Synthesized {len(audio_data)} bytes for: '{message[:50]}...'")
+                    logger.info(
+                        f"🚀 Streaming TTS: {total_bytes} bytes for '{message[:50]}...'"
+                    )
                 else:
-                    logger.warning(f"No audio data for: {message}")
+                    # Fallback to REST API (non-streaming)
+                    audio_data = await self._synthesize_yandex(message)
+
+                    if audio_data:
+                        # Yield in chunks
+                        for i in range(0, len(audio_data), chunk_size):
+                            chunk = audio_data[i:i + chunk_size]
+                            yield chunk
+
+                        logger.info(f"Synthesized {len(audio_data)} bytes for: '{message[:50]}...'")
+                    else:
+                        logger.warning(f"No audio data for: {message}")
 
             except Exception as e:
                 logger.error(f"Error in chunk generator: {e}", exc_info=True)

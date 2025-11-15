@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Editor from '@monaco-editor/react'
 import { promptsApi } from '@/api/prompts'
@@ -10,27 +10,34 @@ export default function PromptsPage() {
   const [previewContent, setPreviewContent] = useState<string>('')
   const queryClient = useQueryClient()
 
-  // Load all prompts
+  // Load all prompts with aggressive caching
   const { data: prompts, isLoading: promptsLoading, error: promptsError } = useQuery({
     queryKey: ['prompts'],
     queryFn: promptsApi.getAllPrompts,
+    staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+    cacheTime: 30 * 60 * 1000, // 30 minutes - cache retention
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Don't refetch on component mount if cached
   })
 
-  // Load available variables
+  // Load available variables with caching
   const { data: variables } = useQuery({
     queryKey: ['prompt-variables'],
     queryFn: promptsApi.getAvailableVariables,
+    staleTime: 10 * 60 * 1000, // 10 minutes - variables rarely change
+    cacheTime: 60 * 60 * 1000, // 1 hour cache
+    refetchOnWindowFocus: false,
   })
 
   // Get selected prompt - with array safety check
   const selectedPrompt = Array.isArray(prompts) ? prompts.find((p) => p.id === selectedPromptId) : undefined
 
   // Update selected content when prompt changes
-  useState(() => {
+  useEffect(() => {
     if (selectedPrompt && editedContent !== selectedPrompt.content) {
       setEditedContent(selectedPrompt.content)
     }
-  })
+  }, [selectedPrompt])
 
   // Update prompt mutation
   const updatePromptMutation = useMutation({

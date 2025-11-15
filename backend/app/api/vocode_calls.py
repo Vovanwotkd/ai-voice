@@ -1,6 +1,7 @@
 """
 Vocode WebRTC Voice Call API
 Uses Vocode components: YandexTranscriber + HostessAgent + YandexSynthesizer
+With rate limiting protection
 """
 
 import asyncio
@@ -13,6 +14,7 @@ from fastapi.responses import JSONResponse
 from app.vocode_providers.yandex_transcriber import YandexTranscriber, YandexTranscriberConfig
 from app.vocode_providers.yandex_synthesizer import YandexSynthesizer, YandexSynthesizerConfig
 from app.vocode_providers.hostess_agent import HostessAgent, HostessAgentConfig
+from app.middleware.rate_limiter import rate_limiter
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ async def start_call() -> JSONResponse:
 @router.websocket("/ws/{call_id}")
 async def websocket_call(websocket: WebSocket, call_id: str):
     """
-    WebSocket endpoint for voice call
+    WebSocket endpoint for voice call with rate limiting
 
     Protocol:
     - Client sends: PCM audio (16kHz, mono, int16)
@@ -48,8 +50,19 @@ async def websocket_call(websocket: WebSocket, call_id: str):
       - JSON: {"type": "response", "text": "..."}
       - Binary: PCM audio (TTS)
     """
+    # Get client IP for rate limiting
+    client_host = websocket.client.host if websocket.client else "unknown"
+    client_id = f"{client_host}:{call_id}"
+
+    # Check connection limit
+    allowed, error_msg = rate_limiter.check_connection_limit(client_id)
+    if not allowed:
+        await websocket.close(code=1008, reason=error_msg)
+        logger.warning(f"Connection rejected for {client_id}: {error_msg}")
+        return
+
     await websocket.accept()
-    logger.info(f"WebSocket connected: {call_id}")
+    logger.info(f"WebSocket connected: {call_id} from {client_host}")
 
     # Create Vocode components
     transcriber_config = YandexTranscriberConfig(language_code="ru-RU")
@@ -86,14 +99,50 @@ async def websocket_call(websocket: WebSocket, call_id: str):
         # Main loop
         while True:
             try:
-                # Receive audio
+                # Check message rate limit
+                allowed, error_msg = rate_limiter.check_message_rate(client_id)
+                if not allowed:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": error_msg
+                    })
+                    await asyncio.sleep(0.1)  # Brief pause
+                    continue
+
+                # Receive audio with timeout
                 audio_data = await asyncio.wait_for(
                     websocket.receive_bytes(),
                     timeout=10.0
                 )
 
+                # Check bandwidth limit
+                allowed, error_msg = rate_limiter.check_bandwidth(client_id, len(audio_data))
+                if not allowed:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": error_msg
+                    })
+                    continue
+
+                # Validate audio data size (max 1MB per chunk)
+                if len(audio_data) > 1_000_000:
+                    logger.warning(f"Received oversized audio chunk: {len(audio_data)} bytes")
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "Audio chunk too large"
+                    })
+                    continue
+
+                # Check queue size to prevent memory overflow
+                if transcriber.input_queue.qsize() > 10:
+                    logger.warning("Transcriber queue overflow, dropping chunk")
+                    continue
+
                 # Send to transcriber
                 await transcriber.input_queue.put(audio_data)
+
+                # Periodic cleanup
+                rate_limiter.cleanup_old_buckets()
 
                 # Check for transcription results
                 while not transcriber.output_queue.empty():
@@ -109,10 +158,13 @@ async def websocket_call(websocket: WebSocket, call_id: str):
                             "text": user_text
                         })
 
-                        # Get agent response
-                        response_text, end_conversation = await agent.respond(
-                            human_input=user_text,
-                            conversation_id=call_id
+                        # Get agent response with timeout
+                        response_text, end_conversation = await asyncio.wait_for(
+                            agent.respond(
+                                human_input=user_text,
+                                conversation_id=call_id
+                            ),
+                            timeout=30.0  # 30 second timeout for LLM response
                         )
 
                         logger.info(f"Agent: {response_text}")
@@ -154,6 +206,9 @@ async def websocket_call(websocket: WebSocket, call_id: str):
     finally:
         # Cleanup
         logger.info(f"Cleaning up call: {call_id}")
+
+        # Release rate limit connection
+        rate_limiter.release_connection(client_id)
 
         # Stop transcriber
         transcriber._ended = True
@@ -212,3 +267,9 @@ async def get_active_calls():
         ],
         "count": len(active_calls)
     })
+
+
+@router.get("/rate-limit/stats")
+async def get_rate_limit_stats():
+    """Get rate limiter statistics (admin endpoint)"""
+    return JSONResponse(rate_limiter.get_stats())
