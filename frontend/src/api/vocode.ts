@@ -5,10 +5,6 @@
 
 import apiClient from './client'
 
-// For REST API calls, use apiClient which has correct baseURL
-// For WebSocket, we need the full URL
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/api/ws/voice'
-
 export interface VocodeConfig {
   voices: Record<string, string>
   system_prompts: Record<string, string>
