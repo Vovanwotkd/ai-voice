@@ -126,7 +126,11 @@ class YandexSynthesizer(BaseSynthesizer[YandexSynthesizerConfig]):
                     timeout=aiohttp.ClientTimeout(total=10)
                 ) as response:
                     if response.status == 200:
-                        return await response.read()
+                        audio_data = await response.read()
+                        content_type = response.headers.get('Content-Type', 'unknown')
+                        logger.info(f"Yandex TTS response: {len(audio_data)} bytes, Content-Type: {content_type}")
+                        logger.debug(f"Request params: format=lpcm, sampleRateHertz=16000")
+                        return audio_data
                     else:
                         error_text = await response.text()
                         logger.error(f"Yandex TTS error {response.status}: {error_text}")

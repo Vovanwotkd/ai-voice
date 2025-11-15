@@ -144,6 +144,8 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                     )
                     db.add(conversation)
                     db.commit()
+                    db.refresh(conversation)
+                    logger.info(f"Created new conversation: {self.conversation_id}")
 
                 # Load messages
                 messages = db.query(Message).filter(
