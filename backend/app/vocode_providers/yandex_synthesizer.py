@@ -22,12 +22,12 @@ class YandexSynthesizerConfig(SynthesizerConfig):
 
     voice: str = "alena"  # Yandex voice
     language_code: str = "ru-RU"
-    speed: float = 1.0
+    speed: float = 0.8  # Slower speech to compensate for fast playback
     emotion: str = "neutral"  # neutral | good | evil
 
     def __init__(self, **data):
         super().__init__(
-            sampling_rate=8000,
+            sampling_rate=16000,
             audio_encoding=AudioEncoding.LINEAR16,
             **data
         )
@@ -111,7 +111,7 @@ class YandexSynthesizer(BaseSynthesizer[YandexSynthesizerConfig]):
                 "voice": self.synthesizer_config.voice,
                 "speed": str(self.synthesizer_config.speed),
                 "format": "lpcm",
-                "sampleRateHertz": "8000",
+                "sampleRateHertz": "16000",
                 "emotion": self.synthesizer_config.emotion,
             }
 
@@ -129,7 +129,7 @@ class YandexSynthesizer(BaseSynthesizer[YandexSynthesizerConfig]):
                         audio_data = await response.read()
                         content_type = response.headers.get('Content-Type', 'unknown')
                         logger.info(f"Yandex TTS response: {len(audio_data)} bytes, Content-Type: {content_type}")
-                        logger.debug(f"Request params: format=lpcm, sampleRateHertz=8000")
+                        logger.debug(f"Request params: format=lpcm, sampleRateHertz=16000")
                         return audio_data
                     else:
                         error_text = await response.text()
