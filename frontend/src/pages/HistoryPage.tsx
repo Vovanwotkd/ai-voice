@@ -9,10 +9,13 @@ export default function HistoryPage() {
   const [offset] = useState(0)
 
   // Load conversations
-  const { data: conversations, isLoading } = useQuery({
+  const { data: conversations, isLoading, error } = useQuery({
     queryKey: ['conversations', limit, offset],
     queryFn: () => chatApi.getHistory(limit, offset),
   })
+
+  // Ensure conversations is an array
+  const conversationsArray = Array.isArray(conversations) ? conversations : []
 
   // Load selected conversation details
   const { data: conversationDetails, isLoading: detailsLoading } = useQuery({
@@ -33,6 +36,18 @@ export default function HistoryPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <div className="text-center">
+          <div className="text-4xl mb-2">❌</div>
+          <p className="text-gray-600">Ошибка загрузки истории</p>
+          <p className="text-sm text-gray-500 mt-2">{String(error)}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Conversations list */}
@@ -40,13 +55,13 @@ export default function HistoryPage() {
         <div className="p-4 border-b bg-gray-50">
           <h2 className="text-xl font-bold">📜 История разговоров</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Всего: {conversations?.length || 0} разговоров
+            Всего: {conversationsArray.length} разговоров
           </p>
         </div>
 
         <div className="divide-y">
-          {conversations && conversations.length > 0 ? (
-            conversations.map((conversation) => (
+          {conversationsArray.length > 0 ? (
+            conversationsArray.map((conversation) => (
               <ConversationItem
                 key={conversation.id}
                 conversation={conversation}
