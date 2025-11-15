@@ -16,7 +16,7 @@ export const cache = {
   /**
    * Set cache item with timestamp
    */
-  set<T>(key: string, data: T, ttl?: number): void {
+  set<T>(key: string, data: T): void {
     try {
       const cacheKey = `${CACHE_PREFIX}${key}`
       const item: CacheItem<T> = {

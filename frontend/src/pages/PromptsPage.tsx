@@ -15,7 +15,7 @@ export default function PromptsPage() {
     queryKey: ['prompts'],
     queryFn: promptsApi.getAllPrompts,
     staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
-    cacheTime: 30 * 60 * 1000, // 30 minutes - cache retention
+    gcTime: 30 * 60 * 1000, // 30 minutes - cache retention (React Query v5)
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchOnMount: false, // Don't refetch on component mount if cached
   })
@@ -25,7 +25,7 @@ export default function PromptsPage() {
     queryKey: ['prompt-variables'],
     queryFn: promptsApi.getAvailableVariables,
     staleTime: 10 * 60 * 1000, // 10 minutes - variables rarely change
-    cacheTime: 60 * 60 * 1000, // 1 hour cache
+    gcTime: 60 * 60 * 1000, // 1 hour cache (React Query v5)
     refetchOnWindowFocus: false,
   })
 

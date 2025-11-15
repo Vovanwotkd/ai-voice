@@ -20,14 +20,14 @@ export const promptsApi = {
       console.log('✅ Prompts loaded from cache')
       // Fetch in background to update cache
       apiClient.get<Prompt[]>('/prompts/').then(({ data }) => {
-        cache.set(PROMPTS_CACHE_KEY, data, PROMPTS_CACHE_TTL)
+        cache.set(PROMPTS_CACHE_KEY, data)
       }).catch(console.error)
       return cached
     }
 
     // Fetch from server
     const { data } = await apiClient.get<Prompt[]>('/prompts/')
-    cache.set(PROMPTS_CACHE_KEY, data, PROMPTS_CACHE_TTL)
+    cache.set(PROMPTS_CACHE_KEY, data)
     return data
   },
 
