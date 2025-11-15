@@ -6,6 +6,10 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
+// Debug: log the API base URL
+console.log('🔧 API Base URL:', API_BASE_URL)
+console.log('🔧 VITE_API_URL env:', import.meta.env.VITE_API_URL)
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
