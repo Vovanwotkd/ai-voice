@@ -61,7 +61,10 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 await self._load_conversation_history()
 
             # Get system prompt from DB
-            system_prompt = await prompt_service.get_active_prompt()
+            system_prompt = None
+            async for db in get_db():
+                system_prompt = await prompt_service.get_active_prompt(db)
+                break
 
             # Generate response using RAG
             if self.agent_config.use_rag:
