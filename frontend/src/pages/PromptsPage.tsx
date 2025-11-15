@@ -11,7 +11,7 @@ export default function PromptsPage() {
   const queryClient = useQueryClient()
 
   // Load all prompts
-  const { data: prompts, isLoading: promptsLoading } = useQuery({
+  const { data: prompts, isLoading: promptsLoading, error: promptsError } = useQuery({
     queryKey: ['prompts'],
     queryFn: promptsApi.getAllPrompts,
   })
@@ -22,8 +22,8 @@ export default function PromptsPage() {
     queryFn: promptsApi.getAvailableVariables,
   })
 
-  // Get selected prompt
-  const selectedPrompt = prompts?.find((p) => p.id === selectedPromptId)
+  // Get selected prompt - with array safety check
+  const selectedPrompt = Array.isArray(prompts) ? prompts.find((p) => p.id === selectedPromptId) : undefined
 
   // Update selected content when prompt changes
   useState(() => {
@@ -97,6 +97,18 @@ export default function PromptsPage() {
     )
   }
 
+  if (promptsError) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <div className="text-center">
+          <div className="text-4xl mb-2">❌</div>
+          <p className="text-gray-600">Ошибка загрузки промптов</p>
+          <p className="text-sm text-gray-500 mt-2">{String(promptsError)}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Sidebar with prompts list */}
@@ -114,7 +126,7 @@ export default function PromptsPage() {
         </div>
 
         <div className="space-y-2">
-          {prompts?.map((prompt) => (
+          {Array.isArray(prompts) && prompts.map((prompt) => (
             <button
               key={prompt.id}
               onClick={() => {

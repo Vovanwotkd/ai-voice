@@ -3,24 +3,27 @@ import { chatApi } from '@/api/chat'
 
 export default function DashboardPage() {
   // Load conversations for statistics
-  const { data: conversations, isLoading } = useQuery({
+  const { data: conversations, isLoading, error } = useQuery({
     queryKey: ['dashboard-conversations'],
     queryFn: () => chatApi.getHistory(1000, 0), // Get up to 1000 conversations for stats
   })
 
+  // Ensure conversations is an array
+  const conversationsArray = Array.isArray(conversations) ? conversations : []
+
   // Calculate statistics
   const stats = {
-    totalConversations: conversations?.length || 0,
+    totalConversations: conversationsArray.length,
     totalMessages:
-      conversations?.reduce((sum, conv) => sum + (conv.messages?.length || 0), 0) || 0,
+      conversationsArray.reduce((sum, conv) => sum + (conv.messages?.length || 0), 0),
     averageLatency: 0,
     recentConversations: 0,
   }
 
   // Calculate average latency from all assistant messages
-  if (conversations) {
+  if (conversationsArray.length > 0) {
     const latencies: number[] = []
-    conversations.forEach((conv) => {
+    conversationsArray.forEach((conv) => {
       conv.messages?.forEach((msg) => {
         if (msg.role === 'assistant' && msg.latency_ms) {
           latencies.push(msg.latency_ms)
@@ -35,10 +38,10 @@ export default function DashboardPage() {
   }
 
   // Count conversations in last 24 hours
-  if (conversations) {
+  if (conversationsArray.length > 0) {
     const oneDayAgo = new Date()
     oneDayAgo.setHours(oneDayAgo.getHours() - 24)
-    stats.recentConversations = conversations.filter(
+    stats.recentConversations = conversationsArray.filter(
       (conv) => new Date(conv.created_at) > oneDayAgo
     ).length
   }
@@ -49,6 +52,18 @@ export default function DashboardPage() {
         <div className="text-center">
           <div className="text-4xl mb-2">⏳</div>
           <p className="text-gray-600">Загрузка статистики...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <div className="text-center">
+          <div className="text-4xl mb-2">❌</div>
+          <p className="text-gray-600">Ошибка загрузки статистики</p>
+          <p className="text-sm text-gray-500 mt-2">{String(error)}</p>
         </div>
       </div>
     )
@@ -94,9 +109,9 @@ export default function DashboardPage() {
       {/* Recent conversations */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-xl font-bold mb-4">📜 Последние разговоры</h2>
-        {conversations && conversations.length > 0 ? (
+        {conversationsArray.length > 0 ? (
           <div className="space-y-2">
-            {conversations.slice(0, 5).map((conversation) => (
+            {conversationsArray.slice(0, 5).map((conversation) => (
               <div
                 key={conversation.id}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
