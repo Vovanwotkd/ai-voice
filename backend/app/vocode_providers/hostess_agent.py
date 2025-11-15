@@ -64,7 +64,8 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
             db_gen = get_db()
             db = next(db_gen)
             try:
-                system_prompt = await prompt_service.get_active_prompt(db)
+                prompt_obj = await prompt_service.get_active_prompt(db)
+                system_prompt = prompt_obj.content if prompt_obj else None
             finally:
                 db.close()
 
