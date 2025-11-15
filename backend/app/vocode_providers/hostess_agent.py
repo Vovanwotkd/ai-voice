@@ -138,9 +138,8 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 if not conversation:
                     conversation = Conversation(
                         id=self.conversation_id,
-                        user_id=None,
-                        title="Voice Call",
-                        is_voice=True
+                        session_id=str(self.conversation_id),
+                        meta_data={"type": "voice_call", "title": "Voice Call"}
                     )
                     db.add(conversation)
                     db.commit()
