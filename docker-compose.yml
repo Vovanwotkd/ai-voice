@@ -53,6 +53,7 @@ services:
       YANDEX_API_KEY: ${YANDEX_API_KEY}
       YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID}
       LLM_PROVIDER: ${LLM_PROVIDER:-claude}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-yandex}
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG:-false}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
@@ -88,6 +89,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
         VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8000/api/ws/voice}
     container_name: hostess-frontend
     depends_on:
