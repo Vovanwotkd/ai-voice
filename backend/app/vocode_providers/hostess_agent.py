@@ -17,7 +17,6 @@ from app.database import get_db
 from app.models.conversation import Conversation
 from app.models.message import Message
 from app.core.constants import MESSAGE_ROLE_USER, MESSAGE_ROLE_ASSISTANT
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +61,12 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
 
             # Get system prompt from DB
             system_prompt = None
-            async for db in get_db():
+            db_gen = get_db()
+            db = next(db_gen)
+            try:
                 system_prompt = await prompt_service.get_active_prompt(db)
-                break
+            finally:
+                db.close()
 
             # Generate response using RAG
             if self.agent_config.use_rag:
@@ -124,12 +126,13 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
     async def _load_conversation_history(self):
         """Load conversation history from DB"""
         try:
-            async for db in get_db():
+            db_gen = get_db()
+            db = next(db_gen)
+            try:
                 # Get or create conversation
-                result = await db.execute(
-                    select(Conversation).where(Conversation.id == self.conversation_id)
-                )
-                conversation = result.scalar_one_or_none()
+                conversation = db.query(Conversation).filter(
+                    Conversation.id == self.conversation_id
+                ).first()
 
                 if not conversation:
                     conversation = Conversation(
@@ -139,15 +142,12 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                         is_voice=True
                     )
                     db.add(conversation)
-                    await db.commit()
+                    db.commit()
 
                 # Load messages
-                result = await db.execute(
-                    select(Message)
-                    .where(Message.conversation_id == self.conversation_id)
-                    .order_by(Message.created_at)
-                )
-                messages = result.scalars().all()
+                messages = db.query(Message).filter(
+                    Message.conversation_id == self.conversation_id
+                ).order_by(Message.created_at).all()
 
                 self.conversation_history = [
                     {"role": msg.role, "content": msg.content}
@@ -155,6 +155,8 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 ]
 
                 logger.info(f"Loaded {len(self.conversation_history)} messages")
+            finally:
+                db.close()
 
         except Exception as e:
             logger.error(f"Error loading conversation: {e}")
@@ -162,7 +164,9 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
     async def _save_messages(self, user_input: str, assistant_response: str):
         """Save messages to DB"""
         try:
-            async for db in get_db():
+            db_gen = get_db()
+            db = next(db_gen)
+            try:
                 # Save user message
                 user_msg = Message(
                     conversation_id=self.conversation_id,
@@ -179,7 +183,9 @@ class HostessAgent(BaseAgent[HostessAgentConfig]):
                 )
                 db.add(assistant_msg)
 
-                await db.commit()
+                db.commit()
+            finally:
+                db.close()
 
         except Exception as e:
             logger.error(f"Error saving messages: {e}")
