@@ -53,6 +53,9 @@ class YandexTranscriber(BaseAsyncTranscriber[YandexTranscriberConfig]):
         self.audio_buffer = bytearray()
         self.min_audio_length = 16000  # Minimum 1 second of audio
 
+        # Initialize base class attributes
+        self._ended = False
+
         logger.info(f"YandexTranscriber initialized: language={transcriber_config.language_code}")
 
     async def _run_loop(self):
