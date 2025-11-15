@@ -7,8 +7,10 @@ import logging
 from typing import List, Dict, Any, Optional
 
 from app.services.embeddings_service import embeddings_service
+from app.services.yandex_embeddings_service import yandex_embeddings_service
 from app.services.vector_store_service import vector_store_service
 from app.services.llm_service import llm_service
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,14 @@ class RAGService:
     """Service for RAG-based question answering"""
 
     def __init__(self):
-        self.embeddings = embeddings_service
+        # Select embeddings provider based on config
+        if settings.EMBEDDINGS_PROVIDER == "yandex":
+            self.embeddings = yandex_embeddings_service
+            logger.info("✅ Using Yandex embeddings for RAG")
+        else:
+            self.embeddings = embeddings_service
+            logger.info("✅ Using OpenAI embeddings for RAG")
+
         self.vector_store = vector_store_service
         self.llm = llm_service
 

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # LLM Provider Configuration
     LLM_PROVIDER: str = "claude"  # claude | openai | yandex
+    EMBEDDINGS_PROVIDER: str = "yandex"  # openai | yandex
     ANTHROPIC_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     YANDEX_API_KEY: Optional[str] = None

@@ -10,6 +10,7 @@ import uuid
 
 from app.models import DocumentChunk
 from app.database import Session
+from app.config import settings as app_settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +30,18 @@ class VectorStoreService:
             anonymized_telemetry=False
         ))
 
-        # Get or create collection
-        self.collection_name = "restaurant_knowledge"
+        # Get or create collection (different name for different embedding providers)
+        embeddings_provider = app_settings.EMBEDDINGS_PROVIDER
+        self.collection_name = f"restaurant_knowledge_{embeddings_provider}"
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,
-            metadata={"description": "Restaurant knowledge base for RAG"}
+            metadata={
+                "description": "Restaurant knowledge base for RAG",
+                "embeddings_provider": embeddings_provider
+            }
         )
 
-        logger.info(f"✅ ChromaDB initialized with collection '{self.collection_name}'")
+        logger.info(f"✅ ChromaDB initialized with collection '{self.collection_name}' (embeddings: {embeddings_provider})")
 
     async def add_chunks(
         self,
