@@ -3,9 +3,11 @@
  * Handles WebRTC voice call interactions
  */
 
-import axios from 'axios'
+import apiClient from './client'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// For REST API calls, use apiClient which has correct baseURL
+// For WebSocket, we need the full URL
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/api/ws/voice'
 
 export interface VocodeConfig {
   voices: Record<string, string>
@@ -40,8 +42,8 @@ export const vocodeApi = {
    * Get Vocode configuration (voices, prompts, audio settings)
    */
   async getConfig(): Promise<VocodeConfig> {
-    const response = await axios.get(`${API_URL}/api/vocode/config`)
-    return response.data
+    const { data } = await apiClient.get('/vocode/config')
+    return data
   },
 
   /**
@@ -52,40 +54,41 @@ export const vocodeApi = {
     voice?: string
     use_rag?: boolean
   }): Promise<StartCallResponse> {
-    const response = await axios.post(`${API_URL}/api/vocode/start`, params)
-    return response.data
+    const { data } = await apiClient.post('/vocode/start', params)
+    return data
   },
 
   /**
    * Get call status
    */
   async getCallStatus(callId: string): Promise<CallStatus> {
-    const response = await axios.get(`${API_URL}/api/vocode/status/${callId}`)
-    return response.data
+    const { data } = await apiClient.get(`/vocode/status/${callId}`)
+    return data
   },
 
   /**
    * End an active call
    */
   async endCall(callId: string): Promise<{ message: string }> {
-    const response = await axios.post(`${API_URL}/api/vocode/end/${callId}`)
-    return response.data
+    const { data } = await apiClient.post(`/vocode/end/${callId}`)
+    return data
   },
 
   /**
    * List all active calls
    */
   async listActiveCalls(): Promise<{ active_calls: ActiveCall[]; count: number }> {
-    const response = await axios.get(`${API_URL}/api/vocode/active`)
-    return response.data
+    const { data } = await apiClient.get('/vocode/active')
+    return data
   },
 
   /**
    * Get WebSocket URL for a call
    */
   getWebSocketUrl(callId: string): string {
+    // Construct WebSocket URL based on current window location
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = API_URL.replace('http://', '').replace('https://', '')
+    const wsHost = window.location.host
     return `${wsProtocol}//${wsHost}/api/vocode/ws/${callId}`
   },
 }
